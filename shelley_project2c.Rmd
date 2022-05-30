@@ -1,0 +1,174 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+**I was marked off for my research question in 2B but talked to Tim and he mentioned it was time. However, I did not receive a response until 8:30pm on Sunday night so my work done here is not as specific. However, I will go back and incorporate the heparin binding domain work!
+
+INTRODUCTION:
+Angiogenesis refers to the formation of blood vessels that promotes cancerous cell growth and migration. While VEGF promotes angiogenesis, thrombospondin can prevent it via its heparin-binding site. Does VEGF exhibit similar nucleotide sequences and protein structures to thrombospondin’s heparin-binding domain, given that these proteins work on the same biological mechanism?
+
+
+Hypothesis: If thrombospondin exhibits its anti-angiogenic effects via its heparin-binding domain, then VEGF will have similar nucleotide sequences and protein structures when compared to this domain because these two proteins exert opposite effects on angiogenesis.
+
+Summary:
+35% of VEGF’s mitogenic activity is due to the heparan binding region, which indicates that some mitogenic activity is inhibited by TSP’s competition for cell surface heparan sulfates.
+TSP inhibits angiogenesis by two mechanisms - the first is direct binding to VEGF and the second is the displacement of VEGF from endothelial cell heparan sulfates.
+
+I will use the NCBI nucleotide database to pull nucleotide sequences for VEGF and thrombospondin. I will use pairwise sequence alignment to view the conserved domains. I can identify the heparin-binding domain in thrombospondin's sequence based on previous literature, and try to see if VEGF has similar sequences. If I manage to identify a region of nucleotides similar to that of the heparin-binding domain on TSP, this would support my hypothesis. Next, I will use the PDB database to pull the amino acid sequences of thrombospondin and VEGF. I can align them using pairwise sequence alignment. I will use structural bioinformatics to determine if there are any structural similarities. More specifically, I will look at the heparin-binding domain and try to see if VEGF exhibits a similar domain or amino acid sequence. I can use comparative structural analysis with RMSD to measure the distance between coordinate sets. If the RMSD is low, then the structures are relatively similar which would support my hypothesis. 
+
+For my first analysis method, I plan to use sequence logos. Sequence logos are graphical representations of conserved nucleotides, so I will compare the VEGF and TSP nucleotide sequences to see if the sequence corresponding to the heparin-binding domain is conserved and significant. If I do find that the heparin-binding domain nucleotide sequence is conserved in both VEGF and TSP, this would support my hypothesis. For my second analysis method, I plan to use 3D protein measurements and principle component analysis. By taking a look at the 3D structures of the protein and the amino acid sequence, I can look for structural similarities and if the amino acid sequence for the heparin-binding site is present in both TSP and VEGF. If it is, I can try to see if there are any structural differences in this amino acid sequence. If the structures derived from the heparin-binding site amino acid sequences look similar, this would support my hypothesis. 
+
+
+pairwise sequence alignment with fasta files
+```{r}
+#if (!require("BiocManager", quietly = TRUE))
+ #   install.packages("BiocManager")
+#BiocManager::install(version = "3.14")
+
+#install.packages("Biostrings")
+library(Biostrings)
+
+library(seqinr)
+
+vegf_DNA <- readDNAStringSet("/Users/shelleymitra/Desktop/bimm 143/vegf_works.fasta")
+#vegf_AAstringset <- AAStringSet(vegf_fasta)
+
+tsp_DNA <- readDNAStringSet("/Users/shelleymitra/Desktop/bimm 143/tsp.fasta")
+#tsp_AAstringset <- AAStringSet(tsp_fasta)
+
+vegft212_DNA <- readDNAStringSet("/Users/shelleymitra/Desktop/bimm 143/vegf_t212.fasta")
+#vegft212_AAstringset <- AAStringSet(vegft212_fasta)
+
+
+pairwiseAlignment(vegf_DNA, tsp_DNA)
+pairwiseAlignment(vegf_DNA, vegft212_DNA)
+
+```
+
+
+multiple sequence alignment and 3D Protein Measurements with PDBs
+```{r}
+#structural bioinformatics analysis
+#code from http://thegrantlab.org/bio3d/articles/online/pdb_vignette/Bio3D_pdb.html#working-with-multiple-pdb-files-1 
+
+#install.packages("bio3d", dependencies=TRUE)
+library(bio3d)
+BiocManager::install("muscle")
+library(muscle)
+
+
+#identified binding site of vegf and tsp c-ternimal domain, and tsp domains 1 and 2
+
+vegf_pdb <- read.pdb("/Users/shelleymitra/Desktop/bimm 143/vegfhuman.pdb")
+vegf_bs <- binding.site(vegf_pdb)
+vegf_bs_AA <- vegf_bs$resnames
+
+#c-terminal domain of tsp
+tsp_c_pdb <- read.pdb("/Users/shelleymitra/Desktop/bimm 143/tspc.pdb")
+tsp_c_bs <- binding.site(tsp_c_pdb)
+tsp_c_bs_AA <- tsp_c_bs$resnames
+
+
+#domains 1 and 2 of tsp
+tsp_1_2_pdb <- read.pdb("/Users/shelleymitra/Desktop/bimm 143/tsp_1_2.pdb")
+tsp_1_2_bs <- binding.site(tsp_1_2_pdb)
+tsp_1_2_bs_AA <- tsp_n_pdb$resnames
+
+#performed a multiple sequence alignment on just the binding sites
+library(msa)
+
+#making a multiple alignment object
+#first turn fasta into an AA string set
+
+msa_vector <- c(tsp_c_bs_AA, vegf_bs_AA, tsp_1_2_bs_AA)
+msa_AAseqs <- AAStringSet(msa_vector)
+msaalignment <- msa(msa_AAseqs)
+msaalignment
+
+#maybe I can move multiple sequence alignment to the beginning for just the fatsa files, and make a pairwise alignment of just tsp_c and vegf binding sites?
+
+
+#3D protein measurements
+struct.aln(vegf_pdb, tsp_c_pdb, exefile='msa')
+
+
+```
+
+Sequence logos with PDBs
+```{r}
+#performing a sequence logo
+#install.packages("ggseqlogo")
+library(ggseqlogo)
+require(ggplot2)
+require(ggseqlogo)
+
+#turned fasta files into character vectors for ggseqlogo. However, the sequence logo was very noisy and not useful so I commented it all out.
+#vegf_DNA_character <- as.character(vegf_DNA)
+#type(vegf_DNA_character)
+#tsp_DNA_character <- as.character(tsp_DNA)
+#vegft212_DNA_character <- as.character(vegft212_DNA)
+#ggseqlogo(vegf_DNA_character ,tsp_DNA_character)
+
+
+## i figured out how to do a sequence logo from the original fasta files, but I want to be able to convert the binding site amino acids (uncovered from the pdb) into DNA nucleotides, and use sequence logos to compare just the binding sites.
+
+#trying to use ggseqlogo on amino acid sequence
+type(vegf_bs_AA)
+type(tsp_c_bs_AA)
+ggseqlogo(vegf_bs_AA, tsp_c_bs_AA)
+```
+
+Structural Bioinformatics (RMSD), PCA, NMA
+```{r}
+#principal component analysis on the PDB files
+BiocManager::install("muscle")
+library(muscle)
+#pdbs already loaded in: vegf_pdb (2XV7) and tsp_c_pdb (1YO8) but we will do it Grant's way
+
+#ids <- c("2XV7", "1UX6")
+#raw.files <- get.pdb(ids)
+
+#extracting and aligning the chains of interest
+files <- c("/Users/shelleymitra/Desktop/bimm 143/vegfhuman.pdb", "/Users/shelleymitra/Desktop/bimm 143/tspc.pdb")
+
+pdbs <- pdbaln(files, exefile='msa')
+
+#calculate sequence identity
+pdbs$id <- basename.pdb(pdbs$id)
+seqidentity(pdbs)
+
+## Calculate RMSD
+rmsd(pdbs, fit=TRUE)
+
+#PCA
+pc <- pca(pdbfit(pdbs), rm.gaps=TRUE)
+plot(pc)
+
+## Quick NMA of all structures 
+modes_vegf <- nma(vegf_pdb)
+print(modes_vegf)
+plot(modes_vegf, sse=pdb)
+
+modes_tsp <- nma(tsp_c_pdb)
+print(modes_tsp)
+plot(modes_tsp, sse=pdb)
+
+#binding <- write.pdb(binding.site(read.pdb("/Users/shelleymitra/Desktop/bimm 143/vegfhuman.pdb")))
+```
+
+Generating PDB structures using NGLVieweR
+```{r}
+#install.packages("remotes")
+remotes::install_github("nvelden/NGLVieweR")
+library(NGLVieweR)
+library(shiny)
+
+NGLVieweR("/Users/shelleymitra/Desktop/bimm 143/vegfhuman.pdb") 
+#nothing is opening?
+
+NGLVieweR("/Users/shelleymitra/Desktop/bimm 143/tspc.pdb") 
+#nothing is opening?
+```
+
